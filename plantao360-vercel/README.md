@@ -39,3 +39,17 @@ Copie `.env.example` para `.env.local`, configure `DATABASE_URL` e `APP_SECRET`,
 ## Segurança de produção
 
 Use repositório privado e mantenha `.env.local` fora do Git. Defina `APP_SECRET` exclusiva e forte, HTTPS no domínio e controle quem acessa o banco. Antes da comercialização, implemente reset de senha, confirmação de e-mail, limitação de tentativas de acesso, exportação/exclusão de dados, política LGPD, backup e auditoria.
+
+## Atualização Etapa 2 (jornadas, atendimentos e financeiro)
+
+Esta atualização adiciona novas tabelas automaticamente no primeiro acesso após o deploy, sem excluir os médicos, locais e plantões existentes. **Use o mesmo banco Neon e mantenha `APP_SECRET` exatamente igual.** Substituir `APP_SECRET` derruba as sessões atuais; trocar o banco faz os dados anteriores não aparecerem.
+
+Inclui: vínculos mensais com remuneração fixa, registro de jornadas realizadas, produção por consulta/procedimento, recebimentos parciais de contratos, baixa de atendimentos e resumo financeiro combinado. Plantões existentes continuam acessíveis e suas baixas continuam na lista de plantões.
+
+### Atenções
+
+- O valor mensal de um contrato ativo é considerado integralmente como produção no mês, mesmo com início/fim no meio do mês. Não há cálculo proporcional automático nesta versão.
+- Horas registradas em jornadas fixas são somadas às horas de plantão. **Não registre o mesmo período nos dois módulos**, para evitar duplicidade de horas.
+- Recebimentos de contrato são limitados ao valor mensal combinado por referência de mês.
+- Esta etapa não inclui integração de assinaturas, emissão fiscal, exclusão/edição de todos os lançamentos ou um extrato financeiro contábil completo.
+- A aplicação deve ser testada em Preview antes de atualizar Production. Não foi possível executar um build completo neste ambiente por indisponibilidade das dependências npm.

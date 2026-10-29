@@ -28,6 +28,38 @@ export function initDb(): Promise<void> {
       paid_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
       notes TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
+    await sql`CREATE TABLE IF NOT EXISTS p360_contracts (
+      id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES p360_users(id) ON DELETE CASCADE,
+      institution_id UUID NOT NULL REFERENCES p360_institutions(id) ON DELETE RESTRICT,
+      title TEXT NOT NULL, monthly_amount NUMERIC(12,2) NOT NULL,
+      weekly_hours NUMERIC(8,2) NOT NULL DEFAULT 0, start_date DATE NOT NULL,
+      end_date DATE, notes TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS p360_workdays (
+      id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES p360_users(id) ON DELETE CASCADE,
+      contract_id UUID NOT NULL REFERENCES p360_contracts(id) ON DELETE CASCADE,
+      work_date DATE NOT NULL, hours NUMERIC(8,2) NOT NULL,
+      notes TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS p360_production (
+      id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES p360_users(id) ON DELETE CASCADE,
+      institution_id UUID NOT NULL REFERENCES p360_institutions(id) ON DELETE RESTRICT,
+      service_date DATE NOT NULL, service_type TEXT NOT NULL, quantity INTEGER NOT NULL,
+      unit_amount NUMERIC(12,2) NOT NULL, amount NUMERIC(12,2) NOT NULL,
+      paid_amount NUMERIC(12,2) NOT NULL DEFAULT 0, notes TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
+    await sql`CREATE TABLE IF NOT EXISTS p360_contract_receipts (
+      id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES p360_users(id) ON DELETE CASCADE,
+      contract_id UUID NOT NULL REFERENCES p360_contracts(id) ON DELETE CASCADE,
+      reference_month TEXT NOT NULL, amount NUMERIC(12,2) NOT NULL,
+      received_on DATE NOT NULL, notes TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
+    await sql`CREATE INDEX IF NOT EXISTS p360_contracts_user ON p360_contracts(user_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS p360_workdays_month ON p360_workdays(user_id,work_date)`;
+    await sql`CREATE INDEX IF NOT EXISTS p360_production_month ON p360_production(user_id,service_date)`;
+    await sql`CREATE INDEX IF NOT EXISTS p360_contract_receipts_month ON p360_contract_receipts(user_id,reference_month)`;
     await sql`CREATE INDEX IF NOT EXISTS p360_institutions_user_idx ON p360_institutions(user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS p360_shifts_user_date_idx ON p360_shifts(user_id,shift_date)`;
   })().catch(e => { ready = undefined; throw e; });
