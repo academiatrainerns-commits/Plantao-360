@@ -1,3 +1,4 @@
+// Plantão360: módulo de assinaturas
 import { db, initDb } from '@/lib/db';
 import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
 export async function mp(path:string, options:RequestInit={}) {
