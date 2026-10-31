@@ -78,28 +78,13 @@ export function initDb(): Promise<void> {
     await sql`CREATE TABLE IF NOT EXISTS p360_billing_audit (
       id UUID PRIMARY KEY, event TEXT NOT NULL, reference TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ DEFAULT now()
     )`;
-    await sql`CREATE TABLE IF NOT EXISTS p360_plans (
-      slug TEXT PRIMARY KEY, name TEXT NOT NULL, price NUMERIC(10,2) NOT NULL CHECK(price > 0),
-      features TEXT NOT NULL DEFAULT '', active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT now()
-    )`;
-    await sql`INSERT INTO p360_plans(slug,name,price,features) VALUES
-      ('essencial','Essencial',19.90,'Plantões, locais e painel'),
-      ('pro','Pro',34.90,'Jornadas, atendimentos e financeiro'),
-      ('premium','Premium',49.90,'Todos os módulos e recursos futuros') ON CONFLICT(slug) DO NOTHING`;
-    await sql`CREATE TABLE IF NOT EXISTS p360_subscriptions (
+    await sql`CREATE TABLE IF NOT EXISTS p360_expenses (
       id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES p360_users(id) ON DELETE CASCADE,
-      plan_slug TEXT NOT NULL REFERENCES p360_plans(slug), mp_id TEXT UNIQUE,
-      status TEXT NOT NULL DEFAULT 'pending', checkout_url TEXT,
-      paid_until TIMESTAMPTZ, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now()
+      institution_id UUID REFERENCES p360_institutions(id) ON DELETE SET NULL,
+      spent_on DATE NOT NULL, category TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
+      amount NUMERIC(12,2) NOT NULL CHECK(amount >= 0), created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
-    await sql`CREATE UNIQUE INDEX IF NOT EXISTS p360_sub_one_user ON p360_subscriptions(user_id)`;
-    await sql`CREATE TABLE IF NOT EXISTS p360_subscription_payments (
-      payment_id TEXT PRIMARY KEY, subscription_id UUID NOT NULL REFERENCES p360_subscriptions(id),
-      amount NUMERIC(10,2) NOT NULL, paid_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ DEFAULT now()
-    )`;
-    await sql`CREATE TABLE IF NOT EXISTS p360_billing_audit (
-      id UUID PRIMARY KEY, event TEXT NOT NULL, reference TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ DEFAULT now()
-    )`;
+    await sql`CREATE INDEX IF NOT EXISTS p360_expenses_month ON p360_expenses(user_id,spent_on)`;
     await sql`CREATE INDEX IF NOT EXISTS p360_contracts_user ON p360_contracts(user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS p360_workdays_month ON p360_workdays(user_id,work_date)`;
     await sql`CREATE INDEX IF NOT EXISTS p360_production_month ON p360_production(user_id,service_date)`;
@@ -109,4 +94,3 @@ export function initDb(): Promise<void> {
   })().catch(e => { ready = undefined; throw e; });
   return ready;
 }
-
