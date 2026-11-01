@@ -84,6 +84,16 @@ export function initDb(): Promise<void> {
       spent_on DATE NOT NULL, category TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
       amount NUMERIC(12,2) NOT NULL CHECK(amount >= 0), created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
+    await sql`CREATE TABLE IF NOT EXISTS p360_agenda (
+      id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES p360_users(id) ON DELETE CASCADE,
+      institution_id UUID REFERENCES p360_institutions(id) ON DELETE SET NULL,
+      title TEXT NOT NULL, starts_at TIMESTAMPTZ NOT NULL, ends_at TIMESTAMPTZ NOT NULL,
+      status TEXT NOT NULL DEFAULT 'previsto', planned_hours NUMERIC(8,2) NOT NULL,
+      actual_hours NUMERIC(8,2), notes TEXT NOT NULL DEFAULT '',
+      series_id UUID, created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      CONSTRAINT p360_agenda_positive CHECK (ends_at > starts_at)
+    )`;
+    await sql`CREATE INDEX IF NOT EXISTS p360_agenda_user_time ON p360_agenda(user_id,starts_at)`;
     await sql`CREATE INDEX IF NOT EXISTS p360_expenses_month ON p360_expenses(user_id,spent_on)`;
     await sql`CREATE INDEX IF NOT EXISTS p360_contracts_user ON p360_contracts(user_id)`;
     await sql`CREATE INDEX IF NOT EXISTS p360_workdays_month ON p360_workdays(user_id,work_date)`;
