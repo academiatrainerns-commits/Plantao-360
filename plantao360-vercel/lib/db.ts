@@ -14,6 +14,15 @@ export function initDb(): Promise<void> {
       id UUID PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     )`;
+    await sql`CREATE TABLE IF NOT EXISTS p360_trials (
+      user_id UUID PRIMARY KEY REFERENCES p360_users(id) ON DELETE CASCADE,
+      whatsapp TEXT NOT NULL,
+      consent_at TIMESTAMPTZ NOT NULL,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days'),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )`;
+    await sql`CREATE INDEX IF NOT EXISTS p360_trials_expiry ON p360_trials(expires_at)`;
     await sql`CREATE TABLE IF NOT EXISTS p360_institutions (
       id UUID PRIMARY KEY, user_id UUID NOT NULL REFERENCES p360_users(id) ON DELETE CASCADE,
       name TEXT NOT NULL, kind TEXT NOT NULL DEFAULT 'Hospital', city TEXT NOT NULL DEFAULT '',

@@ -27,10 +27,14 @@ export async function POST(req:NextRequest,context:{params:Promise<{action:strin
   await initDb(); const sql=db();
   if(action==='register') {
     const name=String(body.name||'').trim(); if(name.length<2||name.length>120) return fail('Informe seu nome');
+    const whatsapp=String(body.whatsapp||'').replace(/\D/g,'');
+    if(!/^\d{10,13}$/.test(whatsapp)) return fail('Informe um WhatsApp válido com DDD');
+    if(body.acceptedPrivacy!==true) return fail('É necessário aceitar os termos e a política de privacidade');
     const exists=await sql`SELECT id FROM p360_users WHERE email=${email}`; if(exists.length) return fail('Este e-mail já está cadastrado',409);
     const id=randomUUID(); const passwordHash=await hash(password,12);
     try { await sql`INSERT INTO p360_users(id,name,email,password_hash) VALUES(${id},${name},${email},${passwordHash})`; }
     catch(e) {if(String(e).includes('unique')) return fail('Este e-mail já está cadastrado',409); throw e;}
+    await sql`INSERT INTO p360_trials(user_id,whatsapp,consent_at) VALUES(${id},${whatsapp},now())`;
     await setSession(id);return NextResponse.json({user:{id,name,email}});
   }
   const users=await sql`SELECT id,name,email,password_hash FROM p360_users WHERE email=${email}`;
